@@ -279,16 +279,36 @@ public struct ChatCompletionParameters: Encodable {
                 case multipleOf, minimum, maximum
             }
             
-            public struct Property: Codable, Equatable {
+            public class Property: Codable, Equatable {
+                public static func == (lhs: Property, rhs: Property) -> Bool {
+                    return lhs.type == rhs.type &&
+                    lhs.description == rhs.description &&
+                    lhs.properties == rhs.properties &&
+                    lhs.format == rhs.format &&
+                    lhs.items == rhs.items &&
+                    lhs.required == rhs.required &&
+                    lhs.pattern == rhs.pattern &&
+                    lhs.const == rhs.const &&
+                    lhs.enumValues == rhs.enumValues &&
+                    lhs.anyOf == rhs.anyOf
+                    lhs.multipleOf == rhs.multipleOf &&
+                    lhs.minimum == rhs.minimum &&
+                    lhs.maximum == rhs.maximum &&
+                    lhs.minItems == rhs.minItems &&
+                    lhs.maxItems == rhs.maxItems &&
+                    lhs.uniqueItems == rhs.uniqueItems
+                }
                 
-                public let type: JSONType
+                public let type: JSONType?
                 public let description: String?
+                public let properties: [String: Property]?
                 public let format: String?
-                public let items: Items?
+                public let items: Property?
                 public let required: [String]?
                 public let pattern: String?
                 public let const: String?
                 public let enumValues: [String]?
+                public let anyOf: [Property]?
                 public let multipleOf: Int?
                 public let minimum: Double?
                 public let maximum: Double?
@@ -297,21 +317,23 @@ public struct ChatCompletionParameters: Encodable {
                 public let uniqueItems: Bool?
                 
                 private enum CodingKeys: String, CodingKey {
-                    case type, description, format, items, required, pattern, const
+                    case type, description, properties, format, items, required, pattern, const
                     case enumValues = "enum"
-                    case multipleOf, minimum, maximum
+                    case anyOf, multipleOf, minimum, maximum
                     case minItems, maxItems, uniqueItems
                 }
                 
                 public init(
-                    type: JSONType,
+                    type: JSONType?,
                     description: String? = nil,
+                    properties: [String: Property]? = nil,
                     format: String? = nil,
-                    items: Items? = nil,
+                    items: Property? = nil,
                     required: [String]? = nil,
                     pattern: String? = nil,
                     const: String? = nil,
                     enumValues: [String]? = nil,
+                    anyOf: [Property]? = nil,
                     multipleOf: Int? = nil,
                     minimum: Double? = nil,
                     maximum: Double? = nil,
@@ -321,18 +343,41 @@ public struct ChatCompletionParameters: Encodable {
                 {
                     self.type = type
                     self.description = description
+                    self.properties = properties
                     self.format = format
                     self.items = items
                     self.required = required
                     self.pattern = pattern
                     self.const = const
                     self.enumValues = enumValues
+                    self.anyOf = anyOf
                     self.multipleOf = multipleOf
                     self.minimum = minimum
                     self.maximum = maximum
                     self.minItems = minItems
                     self.maxItems = maxItems
                     self.uniqueItems = uniqueItems
+                }
+                
+                public func withDescription(_ newDescription: String?) -> Property {
+                    return Property(
+                        type: self.type,
+                        description: newDescription,
+                        properties: self.properties,
+                        format: self.format,
+                        items: self.items,
+                        required: self.required,
+                        pattern: self.pattern,
+                        const: self.const,
+                        enumValues: self.enumValues,
+                        anyOf: self.anyOf,
+                        multipleOf: self.multipleOf,
+                        minimum: self.minimum,
+                        maximum: self.maximum,
+                        minItems: self.minItems,
+                        maxItems: self.maxItems,
+                        uniqueItems: self.uniqueItems
+                    )
                 }
             }
             
@@ -344,53 +389,6 @@ public struct ChatCompletionParameters: Encodable {
                 case object = "object"
                 case number = "number"
                 case `null` = "null"
-            }
-            
-            public struct Items: Codable, Equatable {
-                
-                public let type: JSONType
-                public let properties: [String: Property]?
-                public let pattern: String?
-                public let const: String?
-                public let enumValues: [String]?
-                public let multipleOf: Int?
-                public let minimum: Double?
-                public let maximum: Double?
-                public let minItems: Int?
-                public let maxItems: Int?
-                public let uniqueItems: Bool?
-                
-                private enum CodingKeys: String, CodingKey {
-                    case type, properties, pattern, const
-                    case enumValues = "enum"
-                    case multipleOf, minimum, maximum, minItems, maxItems, uniqueItems
-                }
-                
-                public init(
-                    type: JSONType,
-                    properties: [String : Property]? = nil,
-                    pattern: String? = nil,
-                    const: String? = nil,
-                    enumValues: [String]? = nil,
-                    multipleOf: Int? = nil,
-                    minimum: Double? = nil,
-                    maximum: Double? = nil,
-                    minItems: Int? = nil,
-                    maxItems: Int? = nil,
-                    uniqueItems: Bool? = nil)
-                {
-                    self.type = type
-                    self.properties = properties
-                    self.pattern = pattern
-                    self.const = const
-                    self.enumValues = enumValues
-                    self.multipleOf = multipleOf
-                    self.minimum = minimum
-                    self.maximum = maximum
-                    self.minItems = minItems
-                    self.maxItems = maxItems
-                    self.uniqueItems = uniqueItems
-                }
             }
             
             public init(
