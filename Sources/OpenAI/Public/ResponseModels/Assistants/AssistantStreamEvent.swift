@@ -16,7 +16,7 @@ public enum AssistantStreamEvent {
    
    /// Occurs when a new run is created.
    /// - data is a run
-   case threadRunCreated
+   case threadRunCreated(String)
    
    /// Occurs when a run moves to a queued status.
    /// - data is a run

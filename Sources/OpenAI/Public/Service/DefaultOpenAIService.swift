@@ -649,7 +649,7 @@ struct DefaultOpenAIService: OpenAIService {
    {
       var runToolsOutputParameter = parameters
       runToolsOutputParameter.stream = true
-      let request = try OpenAIAPI.run(.submitToolOutput(threadID: threadID, runID: runID)).request(apiKey: apiKey, organizationID: organizationID, method: .post, params: parameters, betaHeaderField: Self.assistantsBeta)
+      let request = try OpenAIAPI.run(.submitToolOutput(threadID: threadID, runID: runID)).request(apiKey: apiKey, organizationID: organizationID, method: .post, params: runToolsOutputParameter, betaHeaderField: Self.assistantsBeta)
       return try await fetchAssistantStreamEvents(with: request)
    }
 }

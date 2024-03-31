@@ -1021,30 +1021,75 @@ extension OpenAIService {
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
+                    var nextEventType: AssistantStreamEventObject = .error
                     for try await line in data.lines {
+                        if line.hasPrefix("event:") {
+                            let eventTypeString = String(line.dropFirst(7))
+                            let eventType: AssistantStreamEventObject? = .init(rawValue: eventTypeString)
+                            if let eventType = eventType {
+                                nextEventType = eventType
+                            } else {
+                                debugPrint("UNRECOGNIZED EVENT TYPE \(eventTypeString)")
+                            }
+                        }
                         if line.hasPrefix("data:") && line != "data: [DONE]",
                            let data = line.dropFirst(5).data(using: .utf8) {
                             do {
-                                if
-                                    let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any],
-                                    let object = json["object"] as? String,
-                                    let eventObject = AssistantStreamEventObject(rawValue: object)
-                                {
-                                    switch eventObject {
-                                    case .threadMessageDelta:
-                                        let decoded = try self.decoder.decode(MessageDeltaObject.self, from: data)
-                                        continuation.yield(.threadMessageDelta(decoded))
-                                    case .threadRunStepDelta:
-                                        let decoded = try self.decoder.decode(RunStepDeltaObject.self, from: data)
-                                        continuation.yield(.threadRunStepDelta(decoded))
-                                    default:
+                                switch nextEventType {
+                                case .threadMessageDelta:
+                                    let decoded = try self.decoder.decode(MessageDeltaObject.self, from: data)
+                                    continuation.yield(AssistantStreamEvent.threadMessageDelta(decoded))
+                                case .threadRunStepDelta:
+                                    let decoded = try self.decoder.decode(RunStepDeltaObject.self, from: data)
+                                    continuation.yield(AssistantStreamEvent.threadRunStepDelta(decoded))
+                                case .threadCreated:
+                                    continuation.yield(AssistantStreamEvent.threadCreated)
+                                case .threadRunCreated:
+                                    let decoded = jsonStringToDict(String(line.dropFirst(5)))
+                                    continuation.yield(AssistantStreamEvent.threadRunCreated(decoded!["id"] as! String))
+                                case .threadRunQueued:
+                                    continuation.yield(AssistantStreamEvent.threadRunQueued)
+                                case .threadRunInProgress:
+                                    continuation.yield(AssistantStreamEvent.threadRunInProgress)
+                                case .threadRunRequiresAction:
+                                    continuation.yield(AssistantStreamEvent.threadRunRequiresAction)
+                                case .threadRunCompleted:
+                                    continuation.yield(AssistantStreamEvent.threadRunCompleted)
+                                case .threadRunFailed:
+                                    continuation.yield(AssistantStreamEvent.threadRunFailed)
+                                case .threadRunCancelling:
+                                    continuation.yield(AssistantStreamEvent.threadRunCancelling)
+                                case .threadRunCancelled:
+                                    continuation.yield(AssistantStreamEvent.threadRunCancelled)
+                                case .threadRunExpired:
+                                    continuation.yield(AssistantStreamEvent.threadRunExpired)
+                                case .threadRunStepCreated:
+                                    continuation.yield(AssistantStreamEvent.threadRunStepCreated)
+                                case .threadRunStepInProgress:
+                                    continuation.yield(AssistantStreamEvent.threadRunStepInProgress)
+                                case .threadRunStepCompleted:
+                                    continuation.yield(AssistantStreamEvent.threadRunStepCompleted)
+                                case .threadRunStepFailed:
+                                    continuation.yield(AssistantStreamEvent.threadRunStepFailed)
+                                case .threadRunStepCancelled:
+                                    continuation.yield(AssistantStreamEvent.threadRunStepCancelled)
+                                case .threadRunStepExpired:
+                                    continuation.yield(AssistantStreamEvent.threadRunStepExpired)
+                                case .threadMessageCreated:
+                                    continuation.yield(AssistantStreamEvent.threadMessageCreated)
+                                case .threadMessageInProgress:
+                                    continuation.yield(AssistantStreamEvent.threadMessageInProgress)
+                                case .threadMessageCompleted:
+                                    continuation.yield(AssistantStreamEvent.threadMessageCompleted)
+                                case .threadMessageIncomplete:
+                                    continuation.yield(AssistantStreamEvent.threadMessageIncomplete)
+                                case .error:
+                                    continuation.yield(AssistantStreamEvent.error)
+                                case .done:
+                                    continuation.yield(AssistantStreamEvent.done)
+                                default:
 #if DEBUG
-                                        print("DEBUG EVENT \(eventObject.rawValue) IGNORED = \(try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any])")
-#endif
-                                    }
-                                } else {
-#if DEBUG
-                                    print("DEBUG EVENT DECODE IGNORED= \(try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any])")
+                                    print("DEBUG EVENT \(nextEventType) IGNORED = \(try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any])")
 #endif
                                 }
                             } catch let DecodingError.keyNotFound(key, context) {
