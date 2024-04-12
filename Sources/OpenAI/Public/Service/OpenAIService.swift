@@ -1050,7 +1050,8 @@ extension OpenAIService {
                                 case .threadRunQueued:
                                     continuation.yield(AssistantStreamEvent.threadRunQueued)
                                 case .threadRunInProgress:
-                                    continuation.yield(AssistantStreamEvent.threadRunInProgress)
+                                    let decoded = jsonStringToDict(String(line.dropFirst(5)))
+                                    continuation.yield(AssistantStreamEvent.threadRunInProgress(decoded!["id"] as! String))
                                 case .threadRunRequiresAction:
                                     continuation.yield(AssistantStreamEvent.threadRunRequiresAction)
                                 case .threadRunCompleted:

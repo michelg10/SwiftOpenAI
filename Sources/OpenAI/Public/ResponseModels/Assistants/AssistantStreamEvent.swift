@@ -24,7 +24,7 @@ public enum AssistantStreamEvent {
    
    /// Occurs when a run moves to an in_progress status.
    /// - data is a run
-   case threadRunInProgress
+   case threadRunInProgress(String)
    
    /// Occurs when a run moves to a requires_action status.
    /// - data is a run
